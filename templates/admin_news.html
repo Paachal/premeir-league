@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Manage News</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <header>
+        <h1>Manage News</h1>
+    </header>
+    <main>
+        <form action="/admin/news/add" method="post">
+            <label for="headline">Headline:</label>
+            <input type="text" id="headline" name="headline" required>
+            <label for="details">Details:</label>
+            <textarea id="details" name="details" required></textarea>
+            <button type="submit">Add News</button>
+        </form>
+        <h2>Current News</h2>
+        <ul>
+            {% for item in news %}
+            <li>
+                {{ item.headline }} - {{ item.details }}
+                <form action="/admin/news/delete" method="post" style="display: inline;">
+                    <input type="hidden" name="id" value="{{ item._id }}">
+                    <button type="submit">Delete</button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+    </main>
+</body>
+</html>

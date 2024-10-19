@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premier League Fixtures</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <header>
+        <img src="/static/logo.png" alt="The Premier League Bash" class="logo">
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/news">News</a></li>
+                <li><a href="/fixtures">Fixtures</a></li>
+                <li><a href="/teams">Teams</a></li>
+                <li><a href="#">Leagues & Cups</a></li>
+                <li><a href="/table">Tables</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <h1>Premier League Fixtures</h1>
+        <div class="fixtures-container">
+            {% for fixture in fixtures %}
+                <div class="fixture-item">
+                    <h3>{{ fixture.home_team }} vs {{ fixture.away_team }}</h3>
+                    <p>{{ fixture.date }} at {{ fixture.time }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    </main>
+</body>
+</html>

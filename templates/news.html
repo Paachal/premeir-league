@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premier League News</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <header>
+        <img src="/static/logo.png" alt="The Premier League Bash" class="logo">
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/news">News</a></li>
+                <li><a href="/fixtures">Fixtures</a></li>
+                <li><a href="/teams">Teams</a></li>
+                <li><a href="/table">Tables</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <h1>Premier League News</h1>
+        <div class="news-container">
+            {% for news_item in news %}
+                <div class="news-item">
+                    <h3>{{ news_item.headline }}</h3>
+                    <img src="{{ news_item.image_url }}" alt="{{ news_item.headline }}">
+                    <p>{{ news_item.details }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    </main>
+</body>
+</html>

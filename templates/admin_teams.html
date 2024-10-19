@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Manage Teams</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        td {
+            color: black;
+        }
+        .updated-team {
+            background-color: #e7ffe7;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Admin - Manage Teams</h1>
+    </header>
+    <main>
+        <form action="/admin/teams/add" method="post">
+            <h2>Add Team</h2>
+            <label for="name">Team Name:</label>
+            <input type="text" id="name" name="name" required>
+            <button type="submit">Add Team</button>
+        </form>
+
+        <h2>Update Team Details</h2>
+        <table>
+            <tr>
+                <th>Team</th>
+                <th>History</th>
+                <th>About</th>
+                <th>Actions</th>
+            </tr>
+            {% for team in teams %}
+            <tr>
+                <form action="/admin/teams/update" method="post" style="display:inline;">
+                    <td>{{ team.name }}</td>
+                    <td>
+                        <textarea name="history" required>{{ team.history }}</textarea>
+                    </td>
+                    <td>
+                        <textarea name="about" required>{{ team.about }}</textarea>
+                    </td>
+                    <td>
+                        <input type="hidden" name="id" value="{{ team._id }}">
+                        <button type="submit">Update</button>
+                    </td>
+                </form>
+                <form action="/admin/teams/delete" method="post" style="display:inline;">
+                    <input type="hidden" name="id" value="{{ team._id }}">
+                    <td><button type="submit">Delete</button></td>
+                </form>
+            </tr>
+            {% endfor %}
+        </table>
+
+        {% if updated_team %}
+        <div class="updated-team">
+            <h3>Updated Team Information:</h3>
+            <p>Team: {{ updated_team.name }}</p>
+            <p>History: {{ updated_team.history }}</p>
+            <p>About: {{ updated_team.about }}</p>
+        </div>
+        {% endif %}
+    </main>
+</body>
+</html>
