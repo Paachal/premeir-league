@@ -10,6 +10,7 @@ import os
 from database import teams_collection, news_collection, fixtures_collection, team_helper, news_helper, fixture_helper
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
+import hashlib
 app = FastAPI()
 
 origins = [
@@ -162,10 +163,34 @@ async def view_table(request: Request):
 async def get_signup(request: Request):
     return templates.TemplateResponse("signup.html", {"request": request})
 
+@app.post("/signup", response_class=RedirectResponse)
+async def post_signup(name: str = Form(...), email: str = Form(...), team: str = Form(...), password: str = Form(...), confirm_password: str = Form(...)):
+    if password != confirm_password:
+        return templates.TemplateResponse("signup.html", {"request": Request, "error": "Passwords do not match"})
+    hashed_password = hashlib.sha256(password.encode()).hexdigest()
+    new_user = {"name": name, "email": email, "team": team, "password": hashed_password}
+    await db.users.insert_one(new_user)
+    return RedirectResponse(url="/", status_code=303)
+
+
 @app.get("/login", response_class=HTMLResponse)
 async def get_login(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
+@app.post("/login", response_class=RedirectResponse)
+async def post_login(email: str = Form(...), password: str = Form(...)):
+    hashed_password = hashlib.sha256(password.encode()).hexdigest()
+    user = await db.users.find_one({"email": email, "password": hashed_password})
+    if user:
+        return RedirectResponse(url="/", status_code=303)
+    return RedirectResponse(url="/login", status_code=303)    
+
 @app.get("/admin/dashboard", response_class=HTMLResponse)
 async def admin_dashboard(request: Request):
     return templates.TemplateResponse("admin_dashboard.html", {"request": request})
+
+
+@app.get("/logout", response_class=RedirectResponse)
+async def logout(request: Request):
+    request.session.pop("user", None)
+    return RedirectResponse(url="/")

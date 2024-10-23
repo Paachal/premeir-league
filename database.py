@@ -4,7 +4,7 @@ MONGO_DETAILS = "mongodb+srv://paschal:.adgjmptwpaschal@cluster0.dx4v8.mongodb.n
 client = AsyncIOMotorClient(MONGO_DETAILS)
 db = client.premeirdb
 
-# Collections
+
 teams_collection = db.get_collection("teams")
 news_collection = db.get_collection("news")
 fixtures_collection = db.get_collection("fixtures")
