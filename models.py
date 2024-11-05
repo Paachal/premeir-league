@@ -1,5 +1,4 @@
-from pydantic import BaseModel, EmailStr,  Field
-from typing import Optional
+from pydantic import BaseModel, EmailStr, Field
 from bson import ObjectId
 
 class User(BaseModel):
@@ -54,4 +53,4 @@ class AdminUserModel(BaseModel):
     class Config:
         allow_population_by_field_name = True
         arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}        
+        json_encoders = {ObjectId: str}

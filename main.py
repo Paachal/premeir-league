@@ -7,33 +7,35 @@ from bson import ObjectId
 from models import AdminUserModel
 from auth import router as auth_router, get_current_admin_user, get_current_user  
 import os
-from database import teams_collection, news_collection, fixtures_collection, team_helper, news_helper, fixture_helper
+from database import teams_collection, news_collection, fixtures_collection, team_helper, news_helper, fixture_helper, admin_users, users
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
+from passlib.context import CryptContext
 import hashlib
 app = FastAPI()
 
-origins = [
-    "http://localhost",
-    "http://127.0.0.1",
-    "http://localhost:8000",
-    "http://127.0.0.1:8000"
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-app.add_middleware(SessionMiddleware, secret_key="supersecretkey")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
 
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
+
+app.add_middleware(SessionMiddleware, secret_key="your_secret_key")
+
+# Password context for hashing
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+async def get_user_by_email(email: str):
+    user = await users.find_one({"email": email})
+    if user:
+        return user
+    return None
 
 MONGO_DETAILS = "mongodb+srv://paschal:.adgjmptwpaschal@cluster0.dx4v8.mongodb.net/premeirdb?retryWrites=true&w=majority&appName=Cluster0"
 client = AsyncIOMotorClient(MONGO_DETAILS)
@@ -163,34 +165,60 @@ async def view_table(request: Request):
 async def get_signup(request: Request):
     return templates.TemplateResponse("signup.html", {"request": request})
 
-@app.post("/signup", response_class=RedirectResponse)
-async def post_signup(name: str = Form(...), email: str = Form(...), team: str = Form(...), password: str = Form(...), confirm_password: str = Form(...)):
+@app.post("/signup")
+async def signup(
+    request: Request,
+    name: str = Form(...),
+    email: str = Form(...),
+    team: str = Form(...),
+    password: str = Form(...),
+    confirm_password: str = Form(...)
+):
     if password != confirm_password:
-        return templates.TemplateResponse("signup.html", {"request": Request, "error": "Passwords do not match"})
-    hashed_password = hashlib.sha256(password.encode()).hexdigest()
-    new_user = {"name": name, "email": email, "team": team, "password": hashed_password}
-    await db.users.insert_one(new_user)
-    return RedirectResponse(url="/", status_code=303)
+        raise HTTPException(status_code=400, detail="Passwords do not match")
+    
+    user = await get_user_by_email(email)
+    if user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    hashed_password = get_password_hash(password)
+    new_user = {
+        "username": name,
+        "email": email,
+        "hashed_password": hashed_password
+    }
+    request.session["user"] = {"username": name, "email": email}
+    return RedirectResponse(url="/", status_code=302)
 
 
 @app.get("/login", response_class=HTMLResponse)
 async def get_login(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
-@app.post("/login", response_class=RedirectResponse)
-async def post_login(email: str = Form(...), password: str = Form(...)):
-    hashed_password = hashlib.sha256(password.encode()).hexdigest()
-    user = await db.users.find_one({"email": email, "password": hashed_password})
-    if user:
-        return RedirectResponse(url="/", status_code=303)
-    return RedirectResponse(url="/login", status_code=303)    
+@app.post("/login")
+async def login(
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...)
+):
+    user = await get_user_by_email(email)
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid email or password")
+    
+    if not verify_password(password, user["hashed_password"]):
+        raise HTTPException(status_code=400, detail="Invalid email or password")
+    
+    request.session["user"] = {"username": user["username"], "email": user["email"]}
+    return RedirectResponse(url="/", status_code=302)
+   
 
 @app.get("/admin/dashboard", response_class=HTMLResponse)
 async def admin_dashboard(request: Request):
     return templates.TemplateResponse("admin_dashboard.html", {"request": request})
 
 
-@app.get("/logout", response_class=RedirectResponse)
+@app.get("/logout")
 async def logout(request: Request):
-    request.session.pop("user", None)
-    return RedirectResponse(url="/")
+    request.session.clear()
+    return RedirectResponse(url="/", status_code=302)
+    

@@ -4,24 +4,24 @@ MONGO_DETAILS = "mongodb+srv://paschal:.adgjmptwpaschal@cluster0.dx4v8.mongodb.n
 client = AsyncIOMotorClient(MONGO_DETAILS)
 db = client.premeirdb
 
-
 teams_collection = db.get_collection("teams")
 news_collection = db.get_collection("news")
 fixtures_collection = db.get_collection("fixtures")
 table_collection = db.get_collection("table")
-admin_users = db.get_collection("admin_users") 
+admin_users = db.get_collection("admin_users")
+users = db.get_collection("users")
 
 def team_helper(team) -> dict:
     return {
         "id": str(team["_id"]),
         "name": team["name"],
-        "played": team.get("played", 0), 
+        "played": team.get("played", 0),
         "wins": team.get("wins", 0),
         "draws": team.get("draws", 0),
         "lost": team.get("lost", 0),
         "points": team.get("points", 0),
-        "goals_for": team.get("goals_for", 0),  
-        "goals_against": team.get("goals_against", 0)  
+        "goals_for": team.get("goals_for", 0),
+        "goals_against": team.get("goals_against", 0)
     }
 
 def news_helper(news) -> dict:
