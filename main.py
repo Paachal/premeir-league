@@ -4,13 +4,14 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
-from models import AdminUserModel
+from models import AdminUserModel, User, UserInDB, UserInResponse, UserInLogin
 from auth import router as auth_router, get_current_admin_user, get_current_user  
 import os
-from database import teams_collection, news_collection, fixtures_collection, team_helper, news_helper, fixture_helper, admin_users, users
+from database import teams_collection, news_collection, fixtures_collection, team_helper, news_helper, fixture_helper, admin_users, users_collection
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from passlib.context import CryptContext
+from utils import hash_password, verify_password
 import hashlib
 app = FastAPI()
 
@@ -22,24 +23,6 @@ app.include_router(auth_router, prefix="/auth", tags=["auth"])
 
 app.add_middleware(SessionMiddleware, secret_key="your_secret_key")
 
-# Password context for hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
-
-def get_password_hash(password):
-    return pwd_context.hash(password)
-
-async def get_user_by_email(email: str):
-    user = await users.find_one({"email": email})
-    if user:
-        return user
-    return None
-
-MONGO_DETAILS = "mongodb+srv://paschal:.adgjmptwpaschal@cluster0.dx4v8.mongodb.net/premeirdb?retryWrites=true&w=majority&appName=Cluster0"
-client = AsyncIOMotorClient(MONGO_DETAILS)
-db = client.premeirdb
 
 ADMIN_USERNAME = "paschal"
 ADMIN_PASSWORD = ".adgjmptwpaschal"
@@ -165,30 +148,32 @@ async def view_table(request: Request):
 async def get_signup(request: Request):
     return templates.TemplateResponse("signup.html", {"request": request})
 
-@app.post("/signup")
-async def signup(
-    request: Request,
-    name: str = Form(...),
-    email: str = Form(...),
-    team: str = Form(...),
-    password: str = Form(...),
+@app.post("/signup", response_model=UserInResponse)
+async def create_user(
+    username: str = Form(...), 
+    email: str = Form(...), 
+    team: str = Form(...), 
+    password: str = Form(...), 
     confirm_password: str = Form(...)
 ):
     if password != confirm_password:
         raise HTTPException(status_code=400, detail="Passwords do not match")
     
-    user = await get_user_by_email(email)
-    if user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-
-    hashed_password = get_password_hash(password)
-    new_user = {
-        "username": name,
+    user_dict = {
+        "username": username,
         "email": email,
-        "hashed_password": hashed_password
+        "team": team,
+        "hashed_password": hash_password(password)
     }
-    request.session["user"] = {"username": name, "email": email}
-    return RedirectResponse(url="/", status_code=302)
+
+    try:
+        result = await users_collection.insert_one(user_dict)
+        user_dict["_id"] = str(result.inserted_id)
+        return JSONResponse(status_code=201, content=jsonable_encoder(user_dict))
+    except DuplicateKeyError:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 @app.get("/login", response_class=HTMLResponse)
@@ -196,21 +181,13 @@ async def get_login(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
 @app.post("/login")
-async def login(
-    request: Request,
-    email: str = Form(...),
-    password: str = Form(...)
-):
+async def login(request: Request, email: str = Form(...), password: str = Form(...)):
     user = await get_user_by_email(email)
-    if not user:
-        raise HTTPException(status_code=400, detail="Invalid email or password")
+    if not user or not verify_password(password, user["password"]):
+        return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid email or password"})
     
-    if not verify_password(password, user["hashed_password"]):
-        raise HTTPException(status_code=400, detail="Invalid email or password")
-    
-    request.session["user"] = {"username": user["username"], "email": user["email"]}
-    return RedirectResponse(url="/", status_code=302)
-   
+    request.session["user"] = user["_id"]
+    return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
 @app.get("/admin/dashboard", response_class=HTMLResponse)
 async def admin_dashboard(request: Request):

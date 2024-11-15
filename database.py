@@ -9,7 +9,7 @@ news_collection = db.get_collection("news")
 fixtures_collection = db.get_collection("fixtures")
 table_collection = db.get_collection("table")
 admin_users = db.get_collection("admin_users")
-users = db.get_collection("users")
+users_collection = db.get_collection("user")
 
 def team_helper(team) -> dict:
     return {
