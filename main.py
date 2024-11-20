@@ -1,18 +1,20 @@
 from fastapi import FastAPI, Request, Form, Depends, HTTPException, status
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
-from models import AdminUserModel, User, UserInDB, UserInResponse, UserInLogin
+from models import AdminUserModel, User, UserInDB, UserInResponse, UserInLogin, BaseModel
 from auth import router as auth_router, get_current_admin_user, get_current_user  
 import os
-from database import teams_collection, news_collection, fixtures_collection, team_helper, news_helper, fixture_helper, admin_users, users_collection
+from database import teams_collection, news_collection, fixtures_collection, team_helper, news_helper, fixture_helper, admin_users, users_collection, table_collection
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from passlib.context import CryptContext
 from utils import hash_password, verify_password
+from pymongo.errors import DuplicateKeyError
 import hashlib
+import json
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -124,7 +126,7 @@ async def delete_team(request: Request, id: str = Form(...)):
 
 @app.get("/teams", response_class=HTMLResponse)
 async def view_teams(request: Request):
-    teams = await db.teams.find().to_list(100)
+    teams = await teams_collection.find().to_list(100)
     return templates.TemplateResponse("teams.html", {"request": request, "teams": teams})
 
 
@@ -141,39 +143,35 @@ async def read_fixtures(request: Request):
 
 @app.get("/table", response_class=HTMLResponse)
 async def view_table(request: Request):
-    table = await db.table.find().to_list(100)
+    table = await table_collection.find().to_list(100)
     return templates.TemplateResponse("table.html", {"request": request, "table": table})
 
 @app.get("/signup", response_class=HTMLResponse)
 async def get_signup(request: Request):
     return templates.TemplateResponse("signup.html", {"request": request})
 
-@app.post("/signup", response_model=UserInResponse)
-async def create_user(
-    username: str = Form(...), 
-    email: str = Form(...), 
-    team: str = Form(...), 
-    password: str = Form(...), 
-    confirm_password: str = Form(...)
-):
+@app.post("/signup")
+async def signup(request: Request, name: str = Form(...), email: str = Form(...), favorite_team: str = Form(...), password: str = Form(...), confirm_password: str = Form(...)):
     if password != confirm_password:
-        raise HTTPException(status_code=400, detail="Passwords do not match")
+        return templates.TemplateResponse("signup.html", {"request": request, "error": "Passwords do not match"})
     
-    user_dict = {
-        "username": username,
-        "email": email,
-        "team": team,
-        "hashed_password": hash_password(password)
-    }
+    user = await users_collection.find_one({"email": email})
+    if user:
+        return templates.TemplateResponse("signup.html", {"request": request, "error": "Email already registered"})
 
-    try:
-        result = await users_collection.insert_one(user_dict)
-        user_dict["_id"] = str(result.inserted_id)
-        return JSONResponse(status_code=201, content=jsonable_encoder(user_dict))
-    except DuplicateKeyError:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+    hashed_password = hash_password(password)
+    new_user = {
+        "username": name,
+        "email": email,
+        "favorite_team": favorite_team,
+        "password": hashed_password
+    }
+    await users_collection.insert_one(new_user)
+    
+    # Store the username in the session
+    request.session["user"] = name
+    
+    return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @app.get("/login", response_class=HTMLResponse)
@@ -182,12 +180,13 @@ async def get_login(request: Request):
 
 @app.post("/login")
 async def login(request: Request, email: str = Form(...), password: str = Form(...)):
-    user = await get_user_by_email(email)
+    user = await users_collection.find_one({"email": email})
     if not user or not verify_password(password, user["password"]):
         return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid email or password"})
     
-    request.session["user"] = user["_id"]
+    request.session["user"] = user["username"]  # Store the username in the session
     return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+
 
 @app.get("/admin/dashboard", response_class=HTMLResponse)
 async def admin_dashboard(request: Request):
