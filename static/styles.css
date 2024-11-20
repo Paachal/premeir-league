@@ -7,10 +7,11 @@ body {
     line-height: 1.6;
     margin: 0;
     padding: 0;
-    background-color: #f8f9fa;
-    color: #212529;
+    background-color: #f4f4f4;
+    color: #333;
 }
 
+/* Header Styles */
 header {
     display: flex;
     justify-content: space-between;
@@ -22,11 +23,21 @@ header {
     border-radius: 8px;
 }
 
+/* Logo Styles */
 .logo img {
-    max-width: 40px; /* Really small size */
+    max-width: 40px; /* Really small size for logo */
     height: auto;
 }
 
+/* Navigation Container */
+.nav-container {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Space between nav and buttons */
+    margin-right: right; /* Pushes nav and buttons to the right */
+}
+
+/* Navigation Styles */
 nav ul {
     list-style: none;
     display: flex;
@@ -57,7 +68,7 @@ nav ul li a::after {
     width: 0;
     height: 2px;
     background: #ffc107;
-    transition: width 0.3s;
+    transition: width 0.3s ease;
     position: absolute;
     bottom: -4px;
     left: 0;
@@ -67,20 +78,19 @@ nav ul li a:hover::after {
     width: 100%;
 }
 
-/* Button Styles */
+/* Auth Buttons */
 .auth-buttons {
     display: flex;
     gap: 10px;
 }
 
 .button {
-    padding: 10px 18px;
-    background-color: #007bff;
+    padding: 10px 20px;
+    background-color: #007BFF;
     color: white;
     text-decoration: none;
     border-radius: 5px;
-    font-weight: 500;
-    transition: background-color 0.3s ease, transform 0.2s;
+    transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 .button:hover {
@@ -91,69 +101,74 @@ nav ul li a:hover::after {
 /* Main Section */
 .main {
     padding: 40px 20px;
-    max-width: 1100px;
-    margin: 30px auto;
+    max-width: 1200px;
+    margin: 0 auto;
     background-color: white;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-/* Form Styles */
+/* Form Container */
 .form-container {
-    max-width: 450px;
+    max-width: 500px;
     margin: 40px auto;
-    padding: 25px;
-    background-color: white;
+    padding: 30px;
+    border: 1px solid #ccc;
     border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background-color: white;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .form-container h2 {
     text-align: center;
-    margin-bottom: 15px;
-    font-size: 1.5rem;
-    color: #333;
+    margin-bottom: 20px;
 }
 
 form {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 15px;
 }
 
 form label {
-    font-weight: 500;
-    color: #555;
+    font-weight: bold;
 }
 
 form input, form textarea {
-    padding: 12px;
-    border: 1px solid #ddd;
+    padding: 15px;
+    border: 1px solid #ccc;
     border-radius: 5px;
-    font-size: 1rem;
-    color: #333;
-}
-
-form input:focus, form textarea:focus {
-    outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 4px rgba(0, 123, 255, 0.5);
+    font-size: 16px;
 }
 
 form button {
-    padding: 12px;
-    background-color: #007bff;
+    padding: 15px;
+    background-color: #007BFF;
     color: white;
     border: none;
     border-radius: 5px;
-    font-size: 1rem;
+    font-size: 16px;
     cursor: pointer;
-    font-weight: 500;
-    transition: background-color 0.3s ease, transform 0.2s;
+    transition: background-color 0.3s ease;
 }
 
 form button:hover {
     background-color: #0056b3;
+}
+
+/* Additional Enhancements */
+header, nav ul, .form-container {
+    border-radius: 10px;
+}
+
+header {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+button {
+    transition: transform 0.2s;
+}
+
+button:hover {
     transform: translateY(-2px);
 }
 
@@ -161,28 +176,21 @@ form button:hover {
 @media (max-width: 768px) {
     nav ul {
         flex-direction: column;
-        gap: 8px;
+        gap: 10px;
     }
 
     .auth-buttons {
         flex-direction: column;
-        gap: 5px;
     }
 }
 
 @media (max-width: 480px) {
     header {
         flex-direction: column;
-        align-items: center;
         text-align: center;
     }
 
-    .logo {
-        margin-bottom: 10px;
-    }
-
-    nav ul {
-        flex-direction: column;
-        gap: 10px;
+    .logo, .auth-buttons {
+        margin-bottom: 20px;
     }
 }
