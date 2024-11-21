@@ -25,6 +25,8 @@ app.include_router(auth_router, prefix="/auth", tags=["auth"])
 
 app.add_middleware(SessionMiddleware, secret_key="your_secret_key")
 
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 
 ADMIN_USERNAME = "paschal"
 ADMIN_PASSWORD = ".adgjmptwpaschal"
@@ -32,10 +34,10 @@ ADMIN_PASSWORD = ".adgjmptwpaschal"
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
-    user = request.session.get("user")
+    username = request.session.get("user")
     teams = [team_helper(team) for team in await teams_collection.find().to_list(100)]
     news = [news_helper(news_item) for news_item in await news_collection.find().to_list(100)]
-    return templates.TemplateResponse("index.html", {"request": request, "teams": teams, "news": news, "user": user})
+    return templates.TemplateResponse("index.html", {"request": request, "teams": teams, "news": news, "user": username})
 
 @app.get("/admin/login", response_class=HTMLResponse)
 async def login_page(request: Request):
@@ -168,24 +170,21 @@ async def signup(request: Request, name: str = Form(...), email: str = Form(...)
     }
     await users_collection.insert_one(new_user)
     
-    # Store the username in the session
     request.session["user"] = name
-    
-    return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
+    return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
 @app.get("/login", response_class=HTMLResponse)
 async def get_login(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
-@app.post("/login")
+@app.post("/login", response_class=HTMLResponse)
 async def login(request: Request, email: str = Form(...), password: str = Form(...)):
     user = await users_collection.find_one({"email": email})
-    if not user or not verify_password(password, user["password"]):
-        return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid email or password"})
-    
-    request.session["user"] = user["username"]  # Store the username in the session
-    return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+    if user and pwd_context.verify(password, user["password"]):
+        request.session["user"] = user["username"]
+        return RedirectResponse(url="/", status_code=303)
+    raise HTTPException(status_code=400, detail="Invalid email or password")
 
 
 @app.get("/admin/dashboard", response_class=HTMLResponse)

@@ -23,7 +23,7 @@ header {
 
 /* Logo Styles */
 .logo img {
-    max-width: 40px; /* Really small size for logo */
+    max-width: 60px; /* Really small size for logo */
     height: auto;
 }
 
