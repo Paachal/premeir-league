@@ -7,7 +7,7 @@ from bson import ObjectId
 from models import AdminUserModel, User, UserInDB, UserInResponse, UserInLogin, BaseModel
 from auth import router as auth_router, get_current_admin_user, get_current_user  
 import os
-from database import teams_collection, news_collection, fixtures_collection, team_helper, news_helper, fixture_helper, admin_users, users_collection, table_collection
+from database import teams_collection, news_collection, fixtures_collection, team_helper, news_helper, fixture_helper, admin_users, users_collection, table_collection, db
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from passlib.context import CryptContext
@@ -37,7 +37,8 @@ async def read_root(request: Request):
     username = request.session.get("user")
     teams = [team_helper(team) for team in await teams_collection.find().to_list(100)]
     news = [news_helper(news_item) for news_item in await news_collection.find().to_list(100)]
-    return templates.TemplateResponse("index.html", {"request": request, "teams": teams, "news": news, "user": username})
+    fixture = [fixture_helper(new_fixture) for new_fixture in await fixture_collection.find().to_list(100)]
+    return templates.TemplateResponse("index.html", {"request": request, "teams": teams, "news": news, "fixture":fixture, "user": username})
 
 @app.get("/admin/login", response_class=HTMLResponse)
 async def login_page(request: Request):
@@ -95,15 +96,32 @@ async def admin_fixtures(request: Request):
     fixtures = await db.fixtures.find().to_list(100)
     return templates.TemplateResponse("admin_fixtures.html", {"request": request, "fixtures": fixtures})
 
-@app.post("/admin/fixtures/add", response_class=HTMLResponse)
-async def add_fixture(request: Request, home_team: str = Form(...), away_team: str = Form(...), match_date: str = Form(...)):
-    new_fixture = {"home_team": home_team, "away_team": away_team, "match_date": match_date}
+@app.post("/admin/fixtures/add", response_class=RedirectResponse)
+async def add_fixture(request: Request, home_team: str = Form(...), away_team: str = Form(...), match_date: str = Form(...), match_time: str = Form(...), venue: str = Form(...)):
+    new_fixture = {
+        "home_team": home_team,
+        "away_team": away_team,
+        "date": match_date,
+        "time": match_time,
+        "venue": venue
+    }
     await db.fixtures.insert_one(new_fixture)
     return RedirectResponse(url="/admin/fixtures", status_code=303)
 
-@app.post("/admin/fixtures/delete", response_class=HTMLResponse)
-async def delete_fixture(request: Request, id: str = Form(...)):
-    await fixtures_collection.delete_one({"_id": ObjectId(id)})
+@app.post("/admin/fixtures/update", response_class=RedirectResponse)
+async def update_fixture(request: Request, fixture_id: str = Form(...), home_team: str = Form(...), away_team: str = Form(...), match_date: str = Form(...), match_time: str = Form(...), venue: str = Form(...)):
+    await db.fixtures.update_one({"_id": ObjectId(fixture_id)}, {"$set": {
+        "home_team": home_team,
+        "away_team": away_team,
+        "date": match_date,
+        "time": match_time,
+        "venue": venue
+    }})
+    return RedirectResponse(url="/admin/fixtures", status_code=303)
+
+@app.post("/admin/fixtures/delete", response_class=RedirectResponse)
+async def delete_fixture(request: Request, fixture_id: str = Form(...)):
+    await fixtures_collection.delete_one({"_id": ObjectId(fixture_id)})
     return RedirectResponse(url="/admin/fixtures", status_code=303)
 
 @app.get("/admin/teams", response_class=HTMLResponse)

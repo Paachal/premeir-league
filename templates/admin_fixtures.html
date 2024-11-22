@@ -3,35 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Manage Fixtures</title>
+    <title>Admin - Fixtures</title>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <header>
-        <h1>Manage Fixtures</h1>
-    </header>
+    
     <main>
+        <h1>Manage Fixtures</h1>
+        <h2>Add Fixture</h2>
         <form action="/admin/fixtures/add" method="post">
             <label for="home_team">Home Team:</label>
-            <input type="text" id="home_team" name="home_team" required>
+            <input type="text" name="home_team" required>
             <label for="away_team">Away Team:</label>
-            <input type="text" id="away_team" name="away_team" required>
-            <label for="match_date">Match Date:</label>
-            <input type="date" id="match_date" name="match_date" required>
+            <input type="text" name="away_team" required>
+            <label for="match_date">Date:</label>
+            <input type="date" name="match_date" required>
+            <label for="match_time">Time:</label>
+            <input type="time" name="match_time" required>
+            <label for="venue">Venue:</label>
+            <input type="text" name="venue" required>
             <button type="submit">Add Fixture</button>
         </form>
-        <h2>Upcoming Fixtures</h2>
-        <ul>
+
+        <h2>Existing Fixtures</h2>
+        <div class="fixtures-container">
             {% for fixture in fixtures %}
-            <li>
-                {{ fixture.home_team }} vs {{ fixture.away_team }} - {{ fixture.match_date }}
-                <form action="/admin/fixtures/delete" method="post" style="display: inline;">
-                    <input type="hidden" name="id" value="{{ fixture._id }}">
-                    <button type="submit">Delete</button>
-                </form>
-            </li>
+                <div class="fixture-item">
+                    <h3>{{ fixture.home_team }} vs {{ fixture.away_team }}</h3>
+                    <p>Date: {{ fixture.date }}</p>
+                    <p>Time: {{ fixture.time }}</p>
+                    <p>Venue: {{ fixture.venue }}</p>
+
+                    <!-- Update Fixture Form -->
+                    <form action="/admin/fixtures/update" method="post">
+                        <input type="hidden" name="fixture_id" value="{{ fixture._id }}">
+                        <label for="home_team">Home Team:</label>
+                        <input type="text" name="home_team" value="{{ fixture.home_team }}" required>
+                        <label for="away_team">Away Team:</label>
+                        <input type="text" name="away_team" value="{{ fixture.away_team }}" required>
+                        <label for="match_date">Date:</label>
+                        <input type="date" name="match_date" value="{{ fixture.date }}" required>
+                        <label for="match_time">Time:</label>
+                        <input type="time" name="match_time" value="{{ fixture.time }}" required>
+                        <label for="venue">Venue:</label>
+                        <input type="text" name="venue" value="{{ fixture.venue }}" required>
+                        <button type="submit">Update</button>
+                    </form>
+
+                    <!-- Delete Fixture Form -->
+                    <form action="/admin/fixtures/delete" method="post">
+                        <input type="hidden" name="fixture_id" value="{{ fixture._id }}">
+                        <button type="submit">Delete</button>
+                    </form>
+                </div>
             {% endfor %}
-        </ul>
+        </div>
     </main>
 </body>
 </html>

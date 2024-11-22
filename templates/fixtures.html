@@ -27,7 +27,9 @@
             {% for fixture in fixtures %}
                 <div class="fixture-item">
                     <h3>{{ fixture.home_team }} vs {{ fixture.away_team }}</h3>
-                    <p>{{ fixture.date }} at {{ fixture.time }}</p>
+                    <p>Date: {{ fixture.date }}</p>
+                    <p>Time: {{ fixture.time }}</p>
+                    <p>Venue: {{ fixture.venue }}</p>
                 </div>
             {% endfor %}
         </div>
