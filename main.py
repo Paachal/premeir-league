@@ -37,7 +37,7 @@ async def read_root(request: Request):
     username = request.session.get("user")
     teams = [team_helper(team) for team in await teams_collection.find().to_list(100)]
     news = [news_helper(news_item) for news_item in await news_collection.find().to_list(100)]
-    fixture = [fixture_helper(new_fixture) for new_fixture in await fixture_collection.find().to_list(100)]
+    fixture = [fixture_helper(new_fixture) for new_fixture in await fixtures_collection.find().to_list(100)]
     return templates.TemplateResponse("index.html", {"request": request, "teams": teams, "news": news, "fixture":fixture, "user": username})
 
 @app.get("/admin/login", response_class=HTMLResponse)
