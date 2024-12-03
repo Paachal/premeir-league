@@ -146,25 +146,29 @@ async def delete_team(request: Request, id: str = Form(...)):
 
 @app.get("/teams", response_class=HTMLResponse)
 async def view_teams(request: Request):
+    username = request.session.get("user")
     teams = await teams_collection.find().to_list(100)
-    return templates.TemplateResponse("teams.html", {"request": request, "teams": teams})
+    return templates.TemplateResponse("teams.html", {"request": request, "teams": teams,"user": username})
 
 
 
 @app.get("/news", response_class=HTMLResponse)
 async def read_news(request: Request):
+    username = request.session.get("user")
     news = await news_collection.find().to_list(100)
-    return templates.TemplateResponse("news.html", {"request": request, "news": news})
+    return templates.TemplateResponse("news.html", {"request": request, "news": news, "user": username})
 
 @app.get("/fixtures", response_class=HTMLResponse)
 async def read_fixtures(request: Request):
+    username = request.session.get("user")
     fixtures = await fixtures_collection.find().to_list(100)
-    return templates.TemplateResponse("fixtures.html", {"request": request, "fixtures": fixtures})
+    return templates.TemplateResponse("fixtures.html", {"request": request, "fixtures": fixtures,"user": username})
 
 @app.get("/table", response_class=HTMLResponse)
 async def view_table(request: Request):
+    username = request.session.get("user")
     table = await table_collection.find().to_list(100)
-    return templates.TemplateResponse("table.html", {"request": request, "table": table})
+    return templates.TemplateResponse("table.html", {"request": request, "table": table, "user": username})
 
 @app.get("/signup", response_class=HTMLResponse)
 async def get_signup(request: Request):

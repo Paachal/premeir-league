@@ -20,6 +20,16 @@
                 <li><a href="/table">Tables</a></li>
             </ul>
         </nav>
+        <div class="auth-buttons">
+            {% if user %}
+                <span>Welcome, {{ user }}!</span>
+                <a href="/logout" class="button">Log Out</a>
+            {% else %}
+                <a href="/signup" class="button">Create Account</a>
+                <a href="/login" class="button">Log In</a>
+            {% endif %}
+        </div>
+    </div>
     </header>
     <main>
         <h1>Premier League Fixtures</h1>
